@@ -12,71 +12,36 @@ retrieved from the uniprot website. Fisher tests are performed with the
 
 ## Prerequisites
 
-To use `go_enrichment`, you will need a UNIX system (Linux or Mac OSX) and the
-following dependencies installed on your computer (see *Installation* section
-for more details about installing these prerequisites):
-
+To use `go_enrichment`, you will need a UNIX system (Linux or Mac OSX) and conda. 
+Conda will be used to create an environment with the software dependencies.
 - `wget`
 - `gnu parallel`
-- `blastplus` 2.7.1+, the NCBI suite of blast tools
+- `ncbi blast+ version greater than 2.7.1`
+- `goatools version greater than 1.1.7`
+
+You will also need to manually install these database resources
 - `swissprot` blast database ftp://ftp.ncbi.nlm.nih.gov/blast/db/swissprot.tar.gz
-- GO database (see GO database section below)
-- `goatools`
+- `GO database` (see GO database section below)
 
 ## Installation
+### Create and activate the conda environment
 
-If you do not have administrator rights on the computer you will be using or
-have little experience compiling, installing and adding programs to your PATH
-environment variable, you will potentially need to ask an administrator to
-install the following programs and databases.
-
-### Wget
-
-Your UNIX system should already have wget installed. Test this by running:
-
+Create the environment
 ```
-wget
+cd 01_scripts
+conda env create -f environment.yaml
+cd ..
 ```
 
-If you get a message saying there is a missing URL, wget is installed.
-Otherwise, if you are using a computer with OSX. Google `install wget OSX` and
-follow the installations instructions. For `Debian` or `Ubuntu` derived Linux
-distributions, install `wget` with:
-
+Activate the environment and test each tool is present
 ```
-sudo apt-get install wget
-```
+conda activate go_enrichment
+wget -V
+parallel --help
+blastn -version
 
-### Gnu Parallel
-
-We will use `wget` to download gnu parallel:
-
-```
-wget http://ftp.gnu.org/gnu/parallel/parallel-latest.tar.bz2
-tar xvfB parallel-latest.tar.bz2
-cd parallel-*
-./configure && make && sudo make install
-```
-
-### Blast tools 2.7.1+
-
-The blast executables (pre-compiled for different architectures) can be found
-here:
-[ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/).
-Download the right ones for your computer, uncompress the archive and copy all
-the files that are in the `bin` folder so that they are accessible through the
-`$PATH` variable on your system.
-
-For example, if you have administrator rights on the system, you could do:
-
-```
-sudo cp /path_to_blastplus/bin/\* /usr/local/bin
-```
-
-Test the installation by launching blastn's help:
-
-```
-blastn -h
+# ensure goatools on PATH
+which find_enrichment.py
 ```
 
 ### Swissprot database
@@ -98,7 +63,7 @@ wget ftp://ftp.ncbi.nlm.nih.gov/blast/db/swissprot.*
 cat *.md5 | md5sum -c
 
 # Decompressing
-for file in `ls swissprot.*.gz`; do tar -xzf $file ; done
+for file in `ls -1 swissprot.*.gz`; do tar -xzf $file ; done
 
 # Exit temporary bash session
 exit
@@ -122,48 +87,30 @@ wget http://geneontology.org/ontology/go-basic.obo
 exit
 ```
 
-### goatools
-
-#### NEW WAY TO INSTALL (2021-06-30)
-
-```
-conda create -n goatools -c bioconda goatools=1.1.7
-conda activate goatools
-```
-
-#### Old way
-
-`goatools` is a python module. It depends on a certain number of other python
-modules. In order to make the installation easier, we will be using the
-`anaconda` python data analysis platform. `anaconda` will make it easy to
-install most of the module dependencies and does not require administrator
-rights.  To get the `anaconda` install file, go to
-[https://www.continuum.io/downloads](https://www.continuum.io/downloads) and
-choose the appropriate platform and python 2.7, then launch the installation
-and follow the instructions. When asked if you want `anaconda` to add itself to
-your `$PATH` variable, say yes. You can then update with:
-
-```
-conda update conda
-```
-
-Then go to the `goatools` `GitHub` page
-[https://github.com/tanghaibao/goatools](https://github.com/tanghaibao/goatools)
-and follow the installation instructions.
-
 ## Workflow
 
-This is a brief description of the steps as well as the input and output
-formats expected by `go_enrichment`.
+This is a brief description of the steps as well as the input and output formats expected by `go_enrichment`.
 
-### Step 1 - Blast against swissprot
+### Step 0 - Files and Variables
 
 Put your sequences of interest in the `03_sequences` folder in a file named
 `transcriptome.fasta`. If you use another name, you will need to modify the
-`SEQUENCE_FILE` variable in the script.
+`SEQUENCE_FILE` variable in the `blast_against_swissprot.py` script.
 
-You need the script to point to the locally installed blastplus database by
-modifying the `SWISSPROT_DB` variable.
+Modifying the `SWISSPROT_DB` variable may be useful if you prefer the script to point to a previously installed blastplus database in a different location.
+
+The following steps are executed by the `piper.sh` pipeline.
+- blast
+- annotationData
+- annotateTranscripts
+- goatools
+- filter
+
+activate the environment with `conda activate go_enrichment`
+call piper with `./run.sh`
+or manually execute the following steps
+
+### Step 1 - Blast against swissprot
 
 Then run:
 
@@ -213,7 +160,7 @@ python2 scripts/find_enrichment.py --pval=0.05 --indent ../wanted_transcripts.id
 ```
 This script will launch `goatools` and perform the Fisher tests. Note: edit the script to point to your own installation of `find_enrichment.py`    
 
-# TODO put back in the following script
+ TODO put back in the following script
 ```
 ./01_scripts/04_goatools.sh
 ```

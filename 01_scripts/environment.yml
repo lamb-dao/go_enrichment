@@ -1,0 +1,10 @@
+name: go_enrichment
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - wget
+  - parallel
+  - blast>2.7.1
+  - goatools>1.1.7
