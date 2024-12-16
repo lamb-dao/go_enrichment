@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """Annotate sequences with info from uniprot
 
 Usage:
@@ -8,6 +8,7 @@ Usage:
 # Modules
 import sys
 import os
+
 
 # Classes
 class Fasta(object):
@@ -123,3 +124,18 @@ with open(output_file, "w") as ofile:
         info_file = os.path.join(annotation_folder, name + ".info")
         info = Info(info_file, s)
         ofile.write(str(info) + "\n")
+
+# Test if input and output linecount are the same
+def count_sequences(fasta):
+    sequences = fasta_iterator(fasta)
+    return sum(1 for s in sequences)
+def count_lines(filename):
+    with open(filename, 'r') as file:
+        return sum(1 for line in file)
+
+input_lines = count_sequences(sequence_file)
+output_lines = count_lines(output_file)-1 # less the header
+
+if input_lines != output_lines:
+    print(f"Error: Line count mismatch between {sequence_file} ({input_lines}) and {output_file} ({output_lines}). The operation in 03_annotate_genes.py may not have completed correctly.")
+    quit(1)

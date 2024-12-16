@@ -9,10 +9,11 @@ IFS=$'\n\t'
 # TODO ascii airplane
 echo "===/-O-\=== Begin piper run!  ===/-O-\==="
 
-# TODO add note on required environment
-
 ## use arg to set flag to skip interactive use
-runMode=all
+#runMode=all
+runMode=batch
+echo "WARNING: forced runmode to batch in piper.sh"
+# TODO set this back to all, find out why arg 1 is not being used
 flag="${1:-default}"
 if [ "${flag}" == "batch" ]; then
     runMode="${1}"
@@ -84,21 +85,23 @@ MASK
 
 #===================
 # clean data for this run, leave input and checkpoints
+#&&& prob not used in go_enr
 step="sweep_Begin"
 if( doStep ${step} ); then
     echo "BEGIN: ${step}"
     userApprove
-    mkdir -p ${data}
-    rm -r ${data}
-    mkdir -p ${data}
-    touch ${data}/.gitkeep
 
-    # for some uses cleaning output is recommended for guaranteed fresh results
-    # for other uses the finalize (vvv) step is useful for dropping sets of data in output
-    # mkdir -p ${output}
-    # rm -r ${output}
-    # mkdir -p ${output}
-    # touch ${output}/.gitkeep
+    rm -f 04_blast_results/analyzed_genes.hits
+    rm -f 04_blast_results/analyzed_genes.swissprot
+    rm -f 06_fisher_tests/all_go_annotations.csv
+    rm -f .temp_wget_commands.txt
+    rm -f sequence_annotation.csv
+# TODO what happens when sweep step large deletion finds 0 files
+    # large deletion operation
+    ( cd 05_annotations/
+      echo "Removing $(ls -1 | wc -l) files from $(pwd), this can take time."
+      find . -name '*.info' -type f -print | parallel -j 100  "rm {}"
+    )
 
     markStep add $step
 fi
@@ -111,9 +114,9 @@ step="blast"
 if( doStep $step ); then
     echo "BEGIN: ${step}"
     userApprove
-    ( cd ${data}
-      ../01_scripts/01_blast_against_swissprot.sh
-      echo -e "PIPER\t${step}"
+    ( cd ${home}
+      ./01_scripts/01_blast_against_swissprot.sh
+      echo -e "PIPER\t${step}\t$(date)"
     )
     markStep add $step
 fi
@@ -126,9 +129,9 @@ step="annotationData"
 if( doStep $step ); then
     echo "BEGIN: ${step}"
     userApprove
-    ( cd ${data}
-      ../01_scripts/02_get_uniprot_info.sh
-      echo -e "PIPER\t${step}"
+    ( cd ${home}
+      ./01_scripts/02_get_uniprot_info.sh
+      echo -e "PIPER\t${step}\t$(date)"
     )
     markStep add $step
 fi
@@ -141,35 +144,19 @@ step="annotateTranscripts"
 if( doStep $step ); then
     echo "BEGIN: ${step}"
     userApprove
-    ( cd ${data}
-      ../01_scripts/03_annotate_genes.py \
-          03_sequences/transcriptome.fasta \
+    ( cd ${home}
+      ./01_scripts/03_annotate_genes.py \
+          03_sequences/input.fasta \
           05_annotations/ \
-          sequence_annotation.txt
-      echo -e "PIPER\t${step}"
+          sequence_annotation.csv
+      echo -e "PIPER\t${step}\t$(date)"
     )
     markStep add $step
 fi
 #===================
 
-#===================
-step="extractGenes"
-in="${out}" #grab last steps output
-out="${step}.filetype" #set this steps major target
-#markStep del $step #force do
-#markStep add $step #force skip
-if( doStep $step ); then
-    echo "BEGIN: ${step}"
-    userApprove
-    ( cd ${data}
-      echo "This step will do some action on ${in}" > ${out}
-      exitStatus=$?
-      # tab delimited data from action steps, must begin with PIPER\t${step}\t
-      echo -e "PIPER\t${step}\tFiles:\t${in}\t${out}\tExitStatus:\t${exitStatus}"
-    )
-    markStep add $step
-fi
-#===================
+echo early exit after Extract
+exit 0
 
 #===================
 step="goatools"
@@ -180,16 +167,11 @@ out="${step}.filetype" #set this steps major target
 if( dostep $step ); then
     echo "begin: ${step}"
     userapprove
-    ( cd ${data}
-      #python 2 or 3 &&&
-      find_enrichment.py \
-          --pval=0.05 \
-          --indent \
-          ../wanted_transcripts.ids \
-          ../all_ids.txt \
-          ../all_go_annotations.csv \
-          > ../go_annotation.tsv
-      echo -e "piper\t${step}"
+    #python 2 or 3 &&&
+    # paths &&&
+    ( cd ${home}
+      &&&
+      echo -e "piper\t${step}\t$(date)"
     )
     markstep add $step
 fi
@@ -202,12 +184,12 @@ step="filter"
 if( dostep $step ); then
     echo "begin: ${step}"
     userapprove
-    ( cd ${data}
-      ../01_scripts/05_filter_goatools.py \
+    ( cd ${home}
+      ./01_scripts/05_filter_goatools.py \
           enrichment.csv \
           02_go_database/go-basic.obo \
           filtered.csv
-      echo -e "piper\t${step}"
+      echo -e "piper\t${step}\t$(date)"
     )
     markstep add $step
 fi
@@ -293,8 +275,6 @@ fi
 #===================
 
 MASK
-
-
 
 ###################################
 echo "===/-O-\=== End of piper run!  ===/-O-\==="

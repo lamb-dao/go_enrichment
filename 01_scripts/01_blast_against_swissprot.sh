@@ -1,7 +1,11 @@
 #!/bin/bash
 
+#strict mode
+set -euo pipefail
+IFS=$'\n\t'
+
 # Global variables
-SEQUENCE_FILE=03_sequences/analyzed_genes.fasta
+SEQUENCE_FILE=03_sequences/input.fasta
 SWISSPROT_RESULT=04_blast_results/analyzed_genes.swissprot
 SWISSPROT_HITS=04_blast_results/analyzed_genes.hits
 SWISSPROT_DB=blastplus_databases/swissprot

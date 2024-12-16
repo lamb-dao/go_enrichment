@@ -94,7 +94,7 @@ This is a brief description of the steps as well as the input and output formats
 ### Step 0 - Files and Variables
 
 Put your sequences of interest in the `03_sequences` folder in a file named
-`transcriptome.fasta`. If you use another name, you will need to modify the
+`input.fasta`. If you use another name, you will need to modify the
 `SEQUENCE_FILE` variable in the `blast_against_swissprot.py` script.
 
 Modifying the `SWISSPROT_DB` variable may be useful if you prefer the script to point to a previously installed blastplus database in a different location.
@@ -137,30 +137,19 @@ some annotation information (Name, Accession, Fullname, Altnames, GO).
 Run:
 
 ```
-./01_scripts/03_annotate_genes.py 03_sequences/transcriptome.fasta 05_annotations/ sequence_annotation.txt
+./01_scripts/03_annotate_genes.py 03_sequences/input.fasta 05_annotations/ sequence_annotation.csv
 ```
 
 ### Step 4 - Extract genes
 
-Before we can perform the Fisher tests, we need to generate two text files containing (one per line):
-- The names of **all** the analyzed transcripts, 'all_ids.txt'   
-- The names of the **significant** transcripts, 'significant_ids.txt'    
-
 ### Step 5 - Run `goatools`
 
-**WARNING!** This is currently broken. Follow the next steps to use goatools:
+#### Run goatools
 
-#### Install goatools
-See Installation section, including getting the GO databases
 [https://github.com/tanghaibao/goatools](https://github.com/tanghaibao/goatools)
 
-#### Run goatools
-```
-python2 scripts/find_enrichment.py --pval=0.05 --indent ../wanted_transcripts.ids ../all_ids.txt ../all_go_annotations.csv > ../go_annotation.tsv
-```
-This script will launch `goatools` and perform the Fisher tests. Note: edit the script to point to your own installation of `find_enrichment.py`    
+Run:
 
- TODO put back in the following script
 ```
 ./01_scripts/04_goatools.sh
 ```
